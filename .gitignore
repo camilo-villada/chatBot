@@ -1,0 +1,27 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/workspace.xml
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secretos locales (recomendado)
+application-local.properties
+.env

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<!--
+    FORMULARIO DE REGISTRO — Labs 2 y 3
+    ======================================
+    LAB 2: th:object, th:field, @{/ruta}, Patrón PRG
+    LAB 3: th:replace (fragmentos), th:if para mensaje de error
+-->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${tituloPantalla}">Formulario</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f8f9fa; }
+        .content { padding: 30px 40px; max-width: 500px; }
+        .form-group { margin-bottom: 18px; }
+        label {
+            display: block; margin-bottom: 6px;
+            font-weight: bold; font-size: .9rem; color: #555;
+        }
+        input {
+            padding: 10px 12px; width: 100%;
+            border: 1px solid #ccc; border-radius: 6px; font-size: .95rem;
+        }
+        input:focus {
+            outline: none; border-color: #27ae60;
+            box-shadow: 0 0 0 2px rgba(39,174,96,.2);
+        }
+        .btn-guardar {
+            padding: 11px 22px; background: #27ae60;
+            color: white; border: none; border-radius: 6px;
+            font-size: .95rem; cursor: pointer;
+        }
+        .btn-guardar:hover { background: #219150; }
+        .btn-cancelar {
+            padding: 11px 22px; background: #e74c3c;
+            color: white; text-decoration: none;
+            border-radius: 6px; font-size: .95rem;
+            margin-left: 10px; display: inline-block;
+        }
+        .btn-cancelar:hover { background: #c0392b; }
+        .alert-error {
+            background: #f8d7da; color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 12px 16px; border-radius: 6px;
+            margin-bottom: 20px; font-size: .9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LAB 3 — Fragmento navbar (mismo que en lista.html) -->
+    <div th:replace="~{layout/componentes :: navbar}"></div>
+
+    <div class="content">
+
+        <h2 th:text="${tituloPantalla}">Nuevo Libro</h2>
+
+        <!--
+            LAB 3 — Mensaje de error visual.
+            th:if="${errorAnio}" → el div SOLO aparece si el controlador
+            puso el atributo "errorAnio" en el Model (año inválido).
+
+            Cuando el año es válido, "errorAnio" no existe en el Model
+            y Thymeleaf elimina este div del HTML final.
+        -->
+        <div th:if="${errorAnio}" class="alert-error">
+            <strong th:text="${errorAnio}">Mensaje de error genérico</strong>
+        </div>
+
+        <!--
+            LAB 2 — Data Binding con th:object y th:field.
+            ================================================
+
+            th:action="@{/admin/libros/guardar}"
+            → URL destino del POST. @{} garantiza la URL correcta
+              independientemente del contexto de despliegue.
+
+            th:object="${libro}"
+            → Vincula todo el formulario al objeto "libro" del Model.
+              Habilita la sintaxis corta *{campo} en los inputs.
+
+            method="post"
+            → El form usa HTTP POST (no GET).
+        -->
+        <form th:action="@{/admin/libros/guardar}"
+              th:object="${libro}"
+              method="post">
+
+            <!--
+                th:field="*{tittle}"
+                → Thymeleaf genera automáticamente:
+                    id="tittle"
+                    name="tittle"       ← Spring usa este name para el binding
+                    value="${libro.tittle}"  ← pre-rellena si había error
+
+                La sintaxis *{campo} (asterisco) funciona porque estamos
+                dentro de un elemento con th:object. Es equivalente a
+                th:field="${libro.tittle}" pero más corto.
+
+                IMPORTANTE: el nombre debe coincidir con el atributo real
+                de Libro.java. Tu modelo usa: tittle, author, isbn, publicationYear
+            -->
+            <div class="form-group">
+                <label>Título del libro</label>
+                <input type="text" th:field="*{tittle}"
+                       placeholder="Ej: Clean Code" required />
+            </div>
+
+            <div class="form-group">
+                <label>Autor</label>
+                <input type="text" th:field="*{author}"
+                       placeholder="Ej: Robert C. Martin" required />
+            </div>
+
+            <div class="form-group">
+                <label>ISBN</label>
+                <input type="text" th:field="*{isbn}"
+                       placeholder="Ej: 978-0132350884" required />
+            </div>
+
+            <div class="form-group">
+                <label>Año de publicación</label>
+                <!--
+                    LAB 3: si el año supera el actual, el controlador rechaza
+                    el guardado y devuelve ESTA vista (NO redirect).
+                    El campo conserva el valor escrito gracias a th:field,
+                    que lo toma del objeto "libro" que sigue en el Model.
+                -->
+                <input type="number" th:field="*{publicationYear}"
+                       placeholder="Ej: 2008" min="1000" max="2100" required />
+            </div>
+
+            <div>
+                <button type="submit" class="btn-guardar">Guardar Libro</button>
+                <!--
+                    LAB 2 — th:href genera la URL correcta de cancelar.
+                -->
+                <a th:href="@{/admin/libros}" class="btn-cancelar">Cancelar</a>
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- LAB 3 — Fragmento footer -->
+    <div th:replace="~{layout/componentes :: footer}"></div>
+
+    <!-- 💬 CHATBOT FLOTANTE (mismo widget que en la lista) -->
+    <div th:replace="~{layout/chatbot :: widget}"></div>
+
+</body>
+</html>

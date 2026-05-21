@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!--
+    LABORATORIO 3 — Fragmentos Thymeleaf
+    =====================================
+    Este archivo NO se abre directamente en el navegador.
+    Solo almacena fragmentos reutilizables que otras vistas inyectan con:
+        <div th:replace="~{layout/componentes :: navbar}"></div>
+        <div th:replace="~{layout/componentes :: footer}"></div>
+
+    VENTAJA (principio DRY):
+    Si el nombre del sistema cambia, solo se edita ESTE archivo.
+    Todas las páginas que usen estos fragmentos se actualizan solas.
+-->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!--
+        th:fragment="navbar"
+        Define este <header> como un fragmento llamado "navbar".
+        Cualquier vista lo puede inyectar con: ~{layout/componentes :: navbar}
+
+        th:href="@{/ruta}"
+        Genera URLs relativas al contexto de la aplicación.
+        Si la app corre en /librotech/, genera /librotech/admin/libros.
+    -->
+    <header th:fragment="navbar" style="
+        background-color: #2c3e50;
+        color: white;
+        padding: 14px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    ">
+        <span style="font-size: 1.2rem; font-weight: bold;">
+            📚 LibroTech Admin
+        </span>
+        <nav>
+            <a th:href="@{/admin/libros}"
+               style="color: #ecf0f1; margin-right: 20px; text-decoration: none;">
+                Catálogo
+            </a>
+            <a th:href="@{/api/libros}" target="_blank"
+               style="color: #aab7b8; text-decoration: none; font-size: 0.9rem;">
+                Ver API JSON ↗
+            </a>
+        </nav>
+    </header>
+
+    <!--
+        th:fragment="footer"
+
+        ${#dates.format(#dates.createNow(), 'yyyy')}
+        #dates es un "Expression Utility Object" de Thymeleaf.
+        Son objetos de utilidad disponibles directamente en el HTML para
+        operar sobre fechas, listas y strings sin código Java extra.
+        Otros ejemplos: #lists.isEmpty(), #strings.toUpperCase(), #numbers.formatDecimal()
+    -->
+    <footer th:fragment="footer" style="
+        text-align: center;
+        padding: 20px;
+        color: #7f8c8d;
+        margin-top: 40px;
+        border-top: 1px solid #ddd;
+        font-size: 0.85rem;
+    ">
+        <p style="margin: 0;">
+            &copy;
+            <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2025</span>
+            LibroTech — Sistema de Gestión de Bibliotecas · Módulo 6.1
+        </p>
+    </footer>
+
+</body>
+</html>

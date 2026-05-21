@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<!--
+    FRAGMENTO DEL CHATBOT FLOTANTE
+    ===============================
+    Widget que aparece en TODAS las paginas del admin como un boton
+    en la esquina inferior derecha. Al hacer click se expande un panel
+    de chat conectado por STOMP/SockJS al backend.
+
+    Inclusion en otras vistas:
+        <div th:replace="~{layout/chatbot :: widget}"></div>
+
+    Persistencia:
+        - Mensajes guardados en MongoDB Atlas.
+        - Historial cargado via GET /api/mensajes al abrir el widget.
+        - Tiempo real via /chat-websocket (STOMP /tema/mensajes).
+
+    Bot:
+        - Backend invoca Gemini (capa gratuita de Google AI Studio).
+-->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- ============================ WIDGET CHATBOT ============================ -->
+    <div th:fragment="widget">
+
+        <!-- Cargar SockJS + STOMP (CDN). Solo se cargan una vez por pagina. -->
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+        <style>
+            /* ========================== BOTON BURBUJA ========================== */
+            #chatbot-launcher {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #27ae60, #16a085);
+                color: white;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 6px 20px rgba(0,0,0,.25);
+                font-size: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                transition: transform .2s ease, box-shadow .2s ease;
+            }
+            #chatbot-launcher:hover {
+                transform: scale(1.08);
+                box-shadow: 0 8px 24px rgba(0,0,0,.35);
+            }
+            #chatbot-launcher .dot-online {
+                position: absolute;
+                top: 6px;
+                right: 8px;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #f1c40f;
+                border: 2px solid white;
+            }
+
+            /* ============================ PANEL ============================ */
+            #chatbot-panel {
+                position: fixed;
+                bottom: 100px;
+                right: 24px;
+                width: 360px;
+                max-width: calc(100vw - 48px);
+                height: 520px;
+                max-height: calc(100vh - 140px);
+                background: white;
+                border-radius: 14px;
+                box-shadow: 0 12px 40px rgba(0,0,0,.25);
+                display: none;
+                flex-direction: column;
+                overflow: hidden;
+                z-index: 9999;
+                font-family: Arial, sans-serif;
+            }
+            #chatbot-panel.open { display: flex; }
+
+            #chatbot-header {
+                background: linear-gradient(135deg, #2c3e50, #34495e);
+                color: white;
+                padding: 14px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            #chatbot-header .title {
+                font-weight: bold;
+                font-size: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            #chatbot-header .status {
+                font-size: .75rem;
+                opacity: .8;
+                font-weight: normal;
+                display: block;
+            }
+            #chatbot-header button {
+                background: transparent;
+                border: none;
+                color: white;
+                font-size: 1.4rem;
+                cursor: pointer;
+                line-height: 1;
+            }
+
+            #chatbot-messages {
+                flex: 1;
+                overflow-y: auto;
+                padding: 14px;
+                background: #f6f7fb;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            #chatbot-messages .msg {
+                max-width: 80%;
+                padding: 9px 12px;
+                border-radius: 12px;
+                font-size: .9rem;
+                line-height: 1.35;
+                word-wrap: break-word;
+                white-space: pre-wrap;
+            }
+            #chatbot-messages .msg .remitente {
+                display: block;
+                font-size: .7rem;
+                font-weight: bold;
+                margin-bottom: 3px;
+                opacity: .7;
+            }
+            #chatbot-messages .msg-usuario {
+                background: #d1ecf1;
+                color: #0c5460;
+                align-self: flex-end;
+                border-bottom-right-radius: 4px;
+            }
+            #chatbot-messages .msg-bot {
+                background: #d4edda;
+                color: #155724;
+                align-self: flex-start;
+                border-bottom-left-radius: 4px;
+            }
+            #chatbot-messages .msg-sistema {
+                background: #fff3cd;
+                color: #856404;
+                align-self: center;
+                font-size: .8rem;
+                font-style: italic;
+            }
+            #chatbot-messages .typing {
+                align-self: flex-start;
+                background: #d4edda;
+                color: #155724;
+                padding: 9px 12px;
+                border-radius: 12px;
+                font-size: .85rem;
+                font-style: italic;
+                opacity: .8;
+            }
+
+            #chatbot-input-area {
+                border-top: 1px solid #e1e4e8;
+                padding: 10px;
+                display: flex;
+                gap: 8px;
+                background: white;
+            }
+            #chatbot-input {
+                flex: 1;
+                padding: 9px 12px;
+                border: 1px solid #ccc;
+                border-radius: 20px;
+                font-size: .9rem;
+                outline: none;
+            }
+            #chatbot-input:focus { border-color: #27ae60; }
+            #chatbot-send {
+                background: #27ae60;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                cursor: pointer;
+                font-size: 1.1rem;
+            }
+            #chatbot-send:disabled { background: #95a5a6; cursor: not-allowed; }
+
+            #chatbot-nombre-modal {
+                position: absolute;
+                inset: 0;
+                background: rgba(255,255,255,.96);
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 30px;
+                text-align: center;
+            }
+            #chatbot-nombre-modal h3 { margin: 0 0 10px; color: #2c3e50; }
+            #chatbot-nombre-modal p  { margin: 0 0 16px; color: #555; font-size: .9rem; }
+            #chatbot-nombre-modal input {
+                width: 100%; padding: 10px 12px;
+                border: 1px solid #ccc; border-radius: 6px;
+                font-size: .95rem; margin-bottom: 10px;
+            }
+            #chatbot-nombre-modal button {
+                background: #27ae60; color: white; border: none;
+                padding: 10px 22px; border-radius: 6px; cursor: pointer;
+                font-size: .95rem;
+            }
+        </style>
+
+        <!-- ============================ HTML ============================ -->
+        <button id="chatbot-launcher" type="button" title="Abrir asistente">
+            💬
+            <span class="dot-online"></span>
+        </button>
+
+        <div id="chatbot-panel" role="dialog" aria-label="Asistente LibroBot IA">
+
+            <!-- Modal para que el usuario ingrese su nombre la primera vez -->
+            <div id="chatbot-nombre-modal">
+                <h3>👋 Hola, soy LibroBot IA</h3>
+                <p>¿Como te llamas? Tu nombre se mostrara en el chat.</p>
+                <input id="chatbot-nombre-input" type="text" placeholder="Ej: Luis" maxlength="30" />
+                <button id="chatbot-nombre-btn" type="button">Empezar a chatear</button>
+            </div>
+
+            <div id="chatbot-header">
+                <div class="title">
+                    🤖 <div>
+                        LibroBot IA
+                        <span class="status">en linea · responde con Gemini</span>
+                    </div>
+                </div>
+                <button id="chatbot-close" type="button" aria-label="Cerrar">×</button>
+            </div>
+
+            <div id="chatbot-messages" aria-live="polite"></div>
+
+            <div id="chatbot-input-area">
+                <input id="chatbot-input" type="text"
+                       placeholder="Escribe tu pregunta..." maxlength="500" />
+                <button id="chatbot-send" type="button" title="Enviar">➤</button>
+            </div>
+        </div>
+
+        <!-- ============================ JAVASCRIPT ============================ -->
+        <script>
+        (function () {
+            // --- Elementos del DOM ---
+            const launcher = document.getElementById('chatbot-launcher');
+            const panel    = document.getElementById('chatbot-panel');
+            const closeBtn = document.getElementById('chatbot-close');
+            const msgsEl   = document.getElementById('chatbot-messages');
+            const input    = document.getElementById('chatbot-input');
+            const sendBtn  = document.getElementById('chatbot-send');
+            const nombreModal = document.getElementById('chatbot-nombre-modal');
+            const nombreInput = document.getElementById('chatbot-nombre-input');
+            const nombreBtn   = document.getElementById('chatbot-nombre-btn');
+
+            // --- Estado ---
+            let stompClient = null;
+            let conectado = false;
+            let historialCargado = false;
+            let typingEl = null;
+            let nombreUsuario = sessionStorage.getItem('chatbot.nombre') || '';
+            const REMITENTE_BOT = 'LibroBot IA';
+
+            // --- Modal de nombre ---
+            if (nombreUsuario) {
+                nombreModal.style.display = 'none';
+            }
+
+            function guardarNombre() {
+                const v = (nombreInput.value || '').trim();
+                if (!v) { nombreInput.focus(); return; }
+                nombreUsuario = v;
+                sessionStorage.setItem('chatbot.nombre', v);
+                nombreModal.style.display = 'none';
+                input.focus();
+            }
+            nombreBtn.addEventListener('click', guardarNombre);
+            nombreInput.addEventListener('keydown', e => { if (e.key === 'Enter') guardarNombre(); });
+
+            // --- Abrir / cerrar ---
+            launcher.addEventListener('click', () => {
+                panel.classList.add('open');
+                launcher.style.display = 'none';
+                if (!conectado) conectarWS();
+                if (!historialCargado) cargarHistorial();
+                if (nombreUsuario) input.focus();
+                else nombreInput.focus();
+            });
+            closeBtn.addEventListener('click', () => {
+                panel.classList.remove('open');
+                launcher.style.display = 'flex';
+            });
+
+            // --- Helpers de UI ---
+            function escapeHtml(s) {
+                return (s || '').replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                    '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function pintarMensaje(msg) {
+                quitarTyping();
+                const div = document.createElement('div');
+                const esBot = msg.remitente === REMITENTE_BOT;
+                div.className = 'msg ' + (esBot ? 'msg-bot' : 'msg-usuario');
+                div.innerHTML =
+                    '<span class="remitente">' + escapeHtml(msg.remitente) + '</span>' +
+                    escapeHtml(msg.contenido);
+                msgsEl.appendChild(div);
+                msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+
+            function pintarSistema(texto) {
+                const div = document.createElement('div');
+                div.className = 'msg msg-sistema';
+                div.textContent = texto;
+                msgsEl.appendChild(div);
+                msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+
+            function mostrarTyping() {
+                if (typingEl) return;
+                typingEl = document.createElement('div');
+                typingEl.className = 'typing';
+                typingEl.textContent = 'LibroBot IA esta escribiendo...';
+                msgsEl.appendChild(typingEl);
+                msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+            function quitarTyping() {
+                if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+                typingEl = null;
+            }
+
+            // --- Cargar historial via REST ---
+            function cargarHistorial() {
+                fetch('/api/mensajes')
+                    .then(r => r.ok ? r.json() : [])
+                    .then(lista => {
+                        msgsEl.innerHTML = '';
+                        if (!lista || lista.length === 0) {
+                            pintarSistema('Inicio del chat. Pregunta lo que quieras a LibroBot.');
+                        } else {
+                            lista.forEach(pintarMensaje);
+                        }
+                        historialCargado = true;
+                    })
+                    .catch(err => {
+                        console.error('Error cargando historial:', err);
+                        pintarSistema('No pude cargar el historial. Puedes seguir chateando.');
+                        historialCargado = true;
+                    });
+            }
+
+            // --- WebSocket ---
+            function conectarWS() {
+                const socket = new SockJS('/chat-websocket');
+                stompClient = Stomp.over(socket);
+                stompClient.debug = null; // silencia logs verbosos en consola
+                stompClient.connect({}, () => {
+                    conectado = true;
+                    stompClient.subscribe('/tema/mensajes', resp => {
+                        try { pintarMensaje(JSON.parse(resp.body)); }
+                        catch (e) { console.error(e); }
+                    });
+                }, err => {
+                    console.error('Error STOMP:', err);
+                    pintarSistema('Conexion en tiempo real perdida. Recarga la pagina.');
+                    conectado = false;
+                });
+            }
+
+            // --- Envio ---
+            function enviar() {
+                if (!nombreUsuario) { nombreModal.style.display = 'flex'; nombreInput.focus(); return; }
+                const contenido = (input.value || '').trim();
+                if (!contenido) return;
+                if (!conectado || !stompClient) {
+                    pintarSistema('Aun no conectado. Intenta en un momento.');
+                    return;
+                }
+                stompClient.send('/app/enviar', {}, JSON.stringify({
+                    remitente: nombreUsuario,
+                    contenido: contenido
+                }));
+                input.value = '';
+                input.focus();
+                // El backend responde con el mensaje del usuario por /tema/mensajes,
+                // asi que NO lo pintamos aqui (lo recibira la suscripcion).
+                // Mientras llega la respuesta del bot, mostramos indicador:
+                setTimeout(mostrarTyping, 600);
+            }
+            sendBtn.addEventListener('click', enviar);
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') enviar(); });
+        })();
+        </script>
+    </div>
+    <!-- ============================ FIN WIDGET ============================ -->
+
+</body>
+</html>

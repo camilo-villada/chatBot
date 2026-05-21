@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<!--
+    LISTA DE LIBROS — Labs 1, 2 y 3
+    ==================================
+    LAB 1: th:each, th:if, th:unless, th:text, Model
+    LAB 2: th:href al formulario de creación
+    LAB 3: th:replace para navbar y footer (fragmentos)
+-->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!--
+        th:text="${tituloPantalla}"
+        Reemplaza el contenido del tag con el valor del Model.
+        "Catálogo Estático" es el texto FALLBACK (Natural Template):
+        se ve si abres el .html directamente en el navegador sin Spring.
+    -->
+    <title th:text="${tituloPantalla}">Catálogo Estático</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f8f9fa; color: #333; }
+        .content { padding: 30px 40px; }
+        table {
+            width: 100%; border-collapse: collapse;
+            background: white; border-radius: 8px;
+            overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+        thead { background: #2c3e50; color: white; }
+        th, td { padding: 12px 16px; text-align: left; }
+        tbody tr:nth-child(even) { background: #f2f2f2; }
+        tbody tr:hover { background: #dce8f5; }
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            background: white; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1); color: #888;
+        }
+        .btn-nuevo {
+            display: inline-block; padding: 10px 18px;
+            background: #27ae60; color: white;
+            text-decoration: none; border-radius: 6px;
+            font-size: .9rem; margin-bottom: 20px;
+        }
+        .btn-nuevo:hover { background: #219150; }
+        .info-bar { font-size: .9rem; color: #555; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+    <!--
+        LAB 3 — th:replace inyecta el fragmento "navbar" de componentes.html.
+        El <div> contenedor desaparece; en el HTML final queda solo el <header>.
+        Sintaxis: ~{rutaDesdeTemplates :: nombreFragmento}
+    -->
+    <div th:replace="~{layout/componentes :: navbar}"></div>
+
+    <div class="content">
+
+        <h2 th:text="${tituloPantalla}">Lista de Libros</h2>
+
+        <!--
+            LAB 2 — Enlace al formulario de creación.
+            th:href="@{/admin/libros/nuevo}" genera la URL correcta
+            sin importar dónde esté desplegada la app.
+        -->
+        <div>
+            <a th:href="@{/admin/libros/nuevo}" class="btn-nuevo">
+                + Agregar Nuevo Libro
+            </a>
+        </div>
+
+        <!--
+            LAB 1 — th:if muestra este bloque SOLO si la lista está vacía.
+            #lists.isEmpty() es un Expression Utility Object de Thymeleaf.
+        -->
+        <div th:if="${#lists.isEmpty(libros)}" class="empty-state">
+            <p>📭 No hay libros registrados en la base de datos H2.</p>
+            <small>
+                Usa el botón de arriba para agregar uno,<br>
+                o <strong>POST /api/libros</strong> en Postman.
+            </small>
+        </div>
+
+        <!--
+            LAB 1 — th:unless es exactamente lo opuesto a th:if.
+            Este bloque se muestra SOLO cuando la lista NO está vacía.
+        -->
+        <div th:unless="${#lists.isEmpty(libros)}">
+
+            <p class="info-bar">
+                Mostrando
+                <strong th:text="${totalLibros}">0</strong>
+                libro(s) registrado(s).
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>ISBN</th>
+                        <th>Año</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!--
+                        LAB 1 — th:each itera sobre ${libros} del Model.
+                        En cada vuelta, "libro" toma el valor del elemento actual.
+
+                        iterStat (variable de estado opcional) provee:
+                          count → número de fila 1-based
+                          index → número de fila 0-based
+                          first / last → booleanos
+                          odd / even   → booleanos
+
+                        IMPORTANTE: los campos usan el nombre REAL de Libro.java:
+                          tittle, author, isbn, publicationYear
+                        (Lombok @Data genera getTittle(), getAuthor(), etc.)
+                    -->
+                    <tr th:each="libro, iterStat : ${libros}">
+                        <td th:text="${iterStat.count}">1</td>
+                        <td th:text="${libro.id}">-</td>
+                        <td th:text="${libro.tittle}">-</td>
+                        <td th:text="${libro.author}">-</td>
+                        <td th:text="${libro.isbn}">-</td>
+                        <td th:text="${libro.publicationYear}">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- LAB 3 — Fragmento footer -->
+    <div th:replace="~{layout/componentes :: footer}"></div>
+
+    <!--
+        💬 CHATBOT FLOTANTE (Modulo 6.1 — Semana 3, Dia 4)
+        Boton burbuja en la esquina inferior derecha. Al abrirlo conecta por
+        WebSocket/STOMP a /chat-websocket y conversa con LibroBot IA (Gemini).
+    -->
+    <div th:replace="~{layout/chatbot :: widget}"></div>
+
+</body>
+</html>
