@@ -1,5 +1,6 @@
 package com.riwi.librotech.controller.ui;
 
+import com.riwi.librotech.Repository.EditorialRepository;
 import com.riwi.librotech.Service.LibroService;
 import com.riwi.librotech.model.Libro;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +28,14 @@ import java.util.List;
 @RequestMapping("/admin/libros")
 public class LibroUIController {
 
+    private final LibroService libroService;
+    private final EditorialRepository editorialRepository;
+
     @Autowired
-    private LibroService libroService;
+    public LibroUIController(LibroService libroService, EditorialRepository editorialRepository) {
+        this.libroService = libroService;
+        this.editorialRepository = editorialRepository;
+    }
 
     // =========================================================================
     // LAB 1 — Listar libros con th:each
@@ -65,6 +72,7 @@ public class LibroUIController {
     @GetMapping("/nuevo")
     public String mostrarFormularioCreacion(Model model) {
         model.addAttribute("libro", new Libro());
+        model.addAttribute("editoriales", editorialRepository.findAll());
         model.addAttribute("tituloPantalla", "Registrar Nuevo Libro");
         return "libros/formulario";
     }
@@ -93,13 +101,12 @@ public class LibroUIController {
     @PostMapping("/guardar")
     public String guardarLibro(@ModelAttribute("libro") Libro libro, Model model) {
 
-        // LAB 3 — Validación de negocio
-        int anioActual = LocalDate.now().getYear();
-
-        if (libro.getPublicationYear() != null && libro.getPublicationYear() > anioActual) {
+        // Validación de negocio: fecha de publicación no puede estar en el futuro
+        if (libro.getFechaPublicacion() != null && libro.getFechaPublicacion().isAfter(LocalDate.now())) {
             model.addAttribute("errorAnio",
-                    "El año de publicación no puede ser mayor al año actual (" + anioActual + ").");
+                "La fecha de publicación no puede ser posterior a hoy (" + LocalDate.now() + ").");
             model.addAttribute("tituloPantalla", "Registrar Nuevo Libro (Corrección)");
+            model.addAttribute("editoriales", editorialRepository.findAll());
 
             // NO redirect: el objeto "libro" permanece en el Model con los datos
             // escritos → Thymeleaf los mostrará de nuevo en los inputs

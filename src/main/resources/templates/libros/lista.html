@@ -100,7 +100,8 @@
                         <th>Título</th>
                         <th>Autor</th>
                         <th>ISBN</th>
-                        <th>Año</th>
+                        <th>Fecha</th>
+                        <th>Precio</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,9 +115,8 @@
                           first / last → booleanos
                           odd / even   → booleanos
 
-                        IMPORTANTE: los campos usan el nombre REAL de Libro.java:
-                          tittle, author, isbn, publicationYear
-                        (Lombok @Data genera getTittle(), getAuthor(), etc.)
+                                                IMPORTANTE: los campos usan el nombre REAL de Libro.java:
+                                                    tittle, author, isbn, fechaPublicacion, precio
                     -->
                     <tr th:each="libro, iterStat : ${libros}">
                         <td th:text="${iterStat.count}">1</td>
@@ -124,7 +124,8 @@
                         <td th:text="${libro.tittle}">-</td>
                         <td th:text="${libro.author}">-</td>
                         <td th:text="${libro.isbn}">-</td>
-                        <td th:text="${libro.publicationYear}">-</td>
+                                                <td th:text="${libro.fechaPublicacion}">-</td>
+                                                <td th:text="${libro.precio}">-</td>
                     </tr>
                 </tbody>
             </table>

@@ -22,7 +22,16 @@
             padding: 10px 12px; width: 100%;
             border: 1px solid #ccc; border-radius: 6px; font-size: .95rem;
         }
+        select {
+            padding: 10px 12px; width: 100%;
+            border: 1px solid #ccc; border-radius: 6px; font-size: .95rem;
+            background: white;
+        }
         input:focus {
+            outline: none; border-color: #27ae60;
+            box-shadow: 0 0 0 2px rgba(39,174,96,.2);
+        }
+        select:focus {
             outline: none; border-color: #27ae60;
             box-shadow: 0 0 0 2px rgba(39,174,96,.2);
         }
@@ -99,7 +108,7 @@
                 th:field="${libro.tittle}" pero más corto.
 
                 IMPORTANTE: el nombre debe coincidir con el atributo real
-                de Libro.java. Tu modelo usa: tittle, author, isbn, publicationYear
+                de Libro.java. Tu modelo usa: tittle, author, isbn, fechaPublicacion, precio
             -->
             <div class="form-group">
                 <label>Título del libro</label>
@@ -120,15 +129,33 @@
             </div>
 
             <div class="form-group">
-                <label>Año de publicación</label>
+                <label>Editorial</label>
+                <select th:field="*{editorial}" required>
+                    <option value="" disabled="disabled" th:selected="*{editorial} == null">-- Selecciona una editorial --</option>
+                    <option th:each="ed : ${editoriales}"
+                            th:value="${ed.id}"
+                            th:text="${ed.nombre}">
+                        Editorial
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Fecha de publicación</label>
                 <!--
-                    LAB 3: si el año supera el actual, el controlador rechaza
+                    Validación: si la fecha supera hoy, el controlador rechaza
                     el guardado y devuelve ESTA vista (NO redirect).
                     El campo conserva el valor escrito gracias a th:field,
                     que lo toma del objeto "libro" que sigue en el Model.
                 -->
-                <input type="number" th:field="*{publicationYear}"
-                       placeholder="Ej: 2008" min="1000" max="2100" required />
+                <input type="date" th:field="*{fechaPublicacion}"
+                       required />
+            </div>
+
+            <div class="form-group">
+                <label>Precio</label>
+                <input type="number" th:field="*{precio}"
+                       placeholder="Ej: 59.90" min="0" step="0.01" required />
             </div>
 
             <div>

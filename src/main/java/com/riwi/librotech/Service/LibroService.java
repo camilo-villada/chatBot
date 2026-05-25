@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.riwi.librotech.Repository.LibroRepository;
 import com.riwi.librotech.model.Libro;
@@ -34,7 +35,10 @@ public class LibroService {
         libro.setTittle(datos.getTittle());
         libro.setAuthor(datos.getAuthor());
         libro.setIsbn(datos.getIsbn());
-        libro.setPublicationYear(datos.getPublicationYear());
+        libro.setFechaPublicacion(datos.getFechaPublicacion());
+        if (datos.getPrecio() != null) {
+            libro.setPrecio(datos.getPrecio());
+        }
 
         return libroRepository.save(libro);
     }
@@ -46,13 +50,23 @@ public class LibroService {
         if (cambios.getTittle() != null)         libro.setTittle(cambios.getTittle());
         if (cambios.getAuthor() != null)          libro.setAuthor(cambios.getAuthor());
         if (cambios.getIsbn() != null)           libro.setIsbn(cambios.getIsbn());
-        if (cambios.getPublicationYear() != null) libro.setPublicationYear(cambios.getPublicationYear());
+        if (cambios.getFechaPublicacion() != null) libro.setFechaPublicacion(cambios.getFechaPublicacion());
+        if (cambios.getPrecio() != null)          libro.setPrecio(cambios.getPrecio());
 
         return libroRepository.save(libro);
     }
 
     public void eliminar(Long id) {
-        libroRepository.deleteById(id);
+        descatalogarLibro(id);
+    }
+
+    @Transactional
+    public Libro descatalogarLibro(Long id) {
+        Libro libro = libroRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Libro no encontrado: " + id));
+
+        libro.softDelete();
+        return libroRepository.save(libro);
     }
 
     // CORRECCIÓN: usamos findByAuthor (campo real) en vez de findByAutor
