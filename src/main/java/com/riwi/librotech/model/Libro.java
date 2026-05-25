@@ -1,9 +1,11 @@
 package com.riwi.librotech.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.Column;
@@ -20,6 +22,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "libros")
+@SQLDelete(sql = "UPDATE libros SET disponible = false WHERE id = ?")
 @SQLRestriction("disponible = true")
 public class Libro {
 
@@ -27,28 +30,29 @@ public class Libro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
-    private String tittle;
+    @Column(nullable = false)
+    private String titulo;
 
-    @Column(nullable = false, length = 150)
-    private String author;
+    @Column(nullable = false)
+    private String autor;
 
     @Column(unique = true, length = 20)
     private String isbn;
 
-    @Column(name = "fecha_publicacion")
+    @Column(name = "fecha_publicacion", nullable = false)
     private LocalDate fechaPublicacion;
 
-    @Column(nullable = false)
     private Double precio;
 
     @Column(nullable = false)
     private Boolean disponible = true;
 
+    @JsonIgnoreProperties({"libros"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "editorial_id", nullable = false)
     private Editorial editorial;
 
+    @JsonIgnoreProperties({"libros"})
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "libros_generos",
@@ -60,19 +64,14 @@ public class Libro {
     public Libro() {
     }
 
-    public Libro(Long id, String tittle, String author, String isbn, LocalDate fechaPublicacion, Double precio, Boolean disponible,
-            Editorial editorial, Set<Genero> generos) {
-        this.id = id;
-        this.tittle = tittle;
-        this.author = author;
+    public Libro(String titulo, String autor, String isbn, LocalDate fechaPublicacion, Double precio, Editorial editorial) {
+        this.titulo = titulo;
+        this.autor = autor;
         this.isbn = isbn;
         this.fechaPublicacion = fechaPublicacion;
         this.precio = precio;
-        this.disponible = (disponible != null ? disponible : true);
         this.editorial = editorial;
-        if (generos != null) {
-            this.generos = generos;
-        }
+        this.disponible = true;
     }
 
     public void softDelete() {
@@ -87,20 +86,20 @@ public class Libro {
         this.id = id;
     }
 
-    public String getTittle() {
-        return tittle;
+    public String getTitulo() {
+        return titulo;
     }
 
-    public void setTittle(String tittle) {
-        this.tittle = tittle;
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
     }
 
-    public String getAuthor() {
-        return author;
+    public String getAutor() {
+        return autor;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    public void setAutor(String autor) {
+        this.autor = autor;
     }
 
     public String getIsbn() {

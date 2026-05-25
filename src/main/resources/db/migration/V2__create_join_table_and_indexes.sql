@@ -1,5 +1,4 @@
--- V2: Tabla intermedia libros_generos + índices
--- Compatible con el @JoinTable(name = "libros_generos") en Libro
+-- V2: Tabla intermedia Many-to-Many e indices de rendimiento
 
 CREATE TABLE libros_generos (
     libro_id BIGINT NOT NULL,
@@ -13,10 +12,8 @@ CREATE TABLE libros_generos (
         REFERENCES generos (id)
 );
 
--- Índices para rendimiento
-CREATE INDEX idx_libros_editorial_id ON libros (editorial_id);
+-- Indices para optimizar consultas frecuentes
+CREATE INDEX idx_libros_editorial ON libros (editorial_id);
 CREATE INDEX idx_libros_disponible ON libros (disponible);
-CREATE INDEX idx_libros_fecha_publicacion ON libros (fecha_publicacion);
-
-CREATE INDEX idx_libros_generos_genero_id ON libros_generos (genero_id);
-CREATE INDEX idx_libros_generos_libro_id ON libros_generos (libro_id);
+CREATE INDEX idx_libros_fecha ON libros (fecha_publicacion);
+CREATE INDEX idx_editoriales_pais ON editoriales (pais);

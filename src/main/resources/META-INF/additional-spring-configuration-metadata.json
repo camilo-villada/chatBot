@@ -1,0 +1,25 @@
+{
+  "properties": [
+    {
+      "name": "gemini.api.key",
+      "type": "java.lang.String",
+      "description": "API key usada para invocar Gemini."
+    },
+    {
+      "name": "gemini.api.model",
+      "type": "java.lang.String",
+      "description": "Modelo de Gemini que usa el bot."
+    },
+    {
+      "name": "gemini.api.url",
+      "type": "java.lang.String",
+      "description": "URL base de la API REST de Gemini."
+    },
+    {
+      "name": "gemini.contexto.mensajes",
+      "type": "java.lang.Integer",
+      "description": "Cantidad de mensajes recientes enviados como contexto.",
+      "defaultValue": 10
+    }
+  ]
+}

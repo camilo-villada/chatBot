@@ -3,7 +3,6 @@ package com.riwi.librotech.controller.ui;
 import com.riwi.librotech.Repository.EditorialRepository;
 import com.riwi.librotech.Service.LibroService;
 import com.riwi.librotech.model.Libro;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +30,6 @@ public class LibroUIController {
     private final LibroService libroService;
     private final EditorialRepository editorialRepository;
 
-    @Autowired
     public LibroUIController(LibroService libroService, EditorialRepository editorialRepository) {
         this.libroService = libroService;
         this.editorialRepository = editorialRepository;
@@ -85,9 +83,9 @@ public class LibroUIController {
      * POST /admin/libros/guardar
      *
      * @ModelAttribute("libro"):
-     *   Spring lee cada campo del form (name="tittle", name="author"…),
+     *   Spring lee cada campo del form (name="titulo", name="autor"…),
      *   busca el setter en Libro (generado por @Data de Lombok) y lo rellena.
-     *   Ejemplo: name="tittle" → libro.setTittle(valor)
+     *   Ejemplo: name="titulo" → libro.setTitulo(valor)
      *
      * LAB 3 — Validación manual:
      *   Si el año supera el año actual → volvemos al formulario CON el objeto

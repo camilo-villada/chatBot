@@ -1,11 +1,16 @@
 package com.riwi.librotech.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "editoriales")
@@ -15,15 +20,30 @@ public class Editorial {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 120, unique = true)
+    @Column(nullable = false)
     private String nombre;
+
+    @Column(nullable = false)
+    private String direccion;
+
+    @Column(nullable = false)
+    private String pais;
+
+    @Column(name = "fundado_en")
+    private Integer fundadoEn;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "editorial")
+    private List<Libro> libros = new ArrayList<>();
 
     public Editorial() {
     }
 
-    public Editorial(Long id, String nombre) {
-        this.id = id;
+    public Editorial(String nombre, String direccion, String pais, Integer fundadoEn) {
         this.nombre = nombre;
+        this.direccion = direccion;
+        this.pais = pais;
+        this.fundadoEn = fundadoEn;
     }
 
     public Long getId() {
@@ -40,5 +60,37 @@ public class Editorial {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getPais() {
+        return pais;
+    }
+
+    public void setPais(String pais) {
+        this.pais = pais;
+    }
+
+    public Integer getFundadoEn() {
+        return fundadoEn;
+    }
+
+    public void setFundadoEn(Integer fundadoEn) {
+        this.fundadoEn = fundadoEn;
+    }
+
+    public List<Libro> getLibros() {
+        return libros;
+    }
+
+    public void setLibros(List<Libro> libros) {
+        this.libros = libros;
     }
 }

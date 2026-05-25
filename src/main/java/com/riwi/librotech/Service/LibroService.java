@@ -32,13 +32,13 @@ public class LibroService {
         Libro libro = libroRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Libro no encontrado: " + id));
 
-        libro.setTittle(datos.getTittle());
-        libro.setAuthor(datos.getAuthor());
+        libro.setTitulo(datos.getTitulo());
+        libro.setAutor(datos.getAutor());
         libro.setIsbn(datos.getIsbn());
         libro.setFechaPublicacion(datos.getFechaPublicacion());
-        if (datos.getPrecio() != null) {
-            libro.setPrecio(datos.getPrecio());
-        }
+        libro.setPrecio(datos.getPrecio());
+        libro.setEditorial(datos.getEditorial());
+        if (datos.getGeneros() != null) libro.setGeneros(datos.getGeneros());
 
         return libroRepository.save(libro);
     }
@@ -47,11 +47,13 @@ public class LibroService {
         Libro libro = libroRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Libro no encontrado: " + id));
 
-        if (cambios.getTittle() != null)         libro.setTittle(cambios.getTittle());
-        if (cambios.getAuthor() != null)          libro.setAuthor(cambios.getAuthor());
+        if (cambios.getTitulo() != null)         libro.setTitulo(cambios.getTitulo());
+        if (cambios.getAutor() != null)          libro.setAutor(cambios.getAutor());
         if (cambios.getIsbn() != null)           libro.setIsbn(cambios.getIsbn());
         if (cambios.getFechaPublicacion() != null) libro.setFechaPublicacion(cambios.getFechaPublicacion());
         if (cambios.getPrecio() != null)          libro.setPrecio(cambios.getPrecio());
+        if (cambios.getEditorial() != null)       libro.setEditorial(cambios.getEditorial());
+        if (cambios.getGeneros() != null && !cambios.getGeneros().isEmpty()) libro.setGeneros(cambios.getGeneros());
 
         return libroRepository.save(libro);
     }
@@ -69,8 +71,7 @@ public class LibroService {
         return libroRepository.save(libro);
     }
 
-    // CORRECCIÓN: usamos findByAuthor (campo real) en vez de findByAutor
-    public List<Libro> buscarPorAutor(String author) {
-        return libroRepository.findByAuthor(author);
+    public List<Libro> buscarPorAutor(String autor) {
+        return libroRepository.findByAutor(autor);
     }
 }

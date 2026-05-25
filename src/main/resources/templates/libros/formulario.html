@@ -97,28 +97,28 @@
               method="post">
 
             <!--
-                th:field="*{tittle}"
+                th:field="*{titulo}"
                 → Thymeleaf genera automáticamente:
-                    id="tittle"
-                    name="tittle"       ← Spring usa este name para el binding
-                    value="${libro.tittle}"  ← pre-rellena si había error
+                    id="titulo"
+                    name="titulo"       ← Spring usa este name para el binding
+                    value="${libro.titulo}"  ← pre-rellena si había error
 
                 La sintaxis *{campo} (asterisco) funciona porque estamos
                 dentro de un elemento con th:object. Es equivalente a
-                th:field="${libro.tittle}" pero más corto.
+                th:field="${libro.titulo}" pero más corto.
 
                 IMPORTANTE: el nombre debe coincidir con el atributo real
-                de Libro.java. Tu modelo usa: tittle, author, isbn, fechaPublicacion, precio
+                de Libro.java. Tu modelo usa: titulo, autor, isbn, fechaPublicacion, precio
             -->
             <div class="form-group">
                 <label>Título del libro</label>
-                <input type="text" th:field="*{tittle}"
+                <input type="text" th:field="*{titulo}"
                        placeholder="Ej: Clean Code" required />
             </div>
 
             <div class="form-group">
                 <label>Autor</label>
-                <input type="text" th:field="*{author}"
+                <input type="text" th:field="*{autor}"
                        placeholder="Ej: Robert C. Martin" required />
             </div>
 
