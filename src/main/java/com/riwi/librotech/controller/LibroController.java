@@ -1,11 +1,15 @@
 package com.riwi.librotech.controller;
 
 import com.riwi.librotech.Service.LibroService;
+import com.riwi.librotech.dto.LibrosPaginadosResponseDTO;
+import com.riwi.librotech.dto.LibroResumenDTO;
 import com.riwi.librotech.model.Libro;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,15 +40,56 @@ public class LibroController {
     private LibroService libroService;
 
     @GetMapping
-    public ResponseEntity<List<Libro>> listarLibros() {
-        return ResponseEntity.ok(libroService.obtenerTodos());
+    public ResponseEntity<?> listarLibros(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String direction) {
+        if (page == null && size == null && sortBy == null && direction == null) {
+            return ResponseEntity.ok(libroService.obtenerTodosConRelaciones());
+        }
+
+        Slice<LibroResumenDTO> slice = libroService.obtenerResumenes(
+                page != null ? page : 0,
+                size != null ? size : 20,
+                sortBy != null ? sortBy : "id",
+                direction != null ? direction : "asc"
+        );
+
+        LibrosPaginadosResponseDTO response = new LibrosPaginadosResponseDTO(
+                slice.getContent(),
+                slice.getNumber(),
+                slice.getSize(),
+                slice.hasNext(),
+                slice.hasPrevious()
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Libro> obtenerLibro(@PathVariable long id) {
-        return libroService.obtenerPorId(id)
+        return libroService.obtenerPorIdConRelaciones(id)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/resumenes")
+    public ResponseEntity<Slice<LibroResumenDTO>> listarResumenes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseEntity.ok(libroService.obtenerResumenes(page, size, sortBy, direction));
+    }
+
+    @GetMapping("/resumenes/page")
+    public ResponseEntity<Page<LibroResumenDTO>> listarResumenesPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseEntity.ok(libroService.obtenerResumenesPage(page, size, sortBy, direction));
     }
 
     @PostMapping

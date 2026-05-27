@@ -84,7 +84,7 @@ public class LibroUIController {
      *
      * @ModelAttribute("libro"):
      *   Spring lee cada campo del form (name="titulo", name="autor"…),
-     *   busca el setter en Libro (generado por @Data de Lombok) y lo rellena.
+    *   busca el setter en Libro (métodos setXxx) y lo rellena.
      *   Ejemplo: name="titulo" → libro.setTitulo(valor)
      *
      * LAB 3 — Validación manual:
